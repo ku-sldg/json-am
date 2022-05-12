@@ -1,0 +1,516 @@
+\section{Copland Phrase and Evidence Grammars}
+\label{sec:json}
+
+\colorlet{punct}{red!60!black}
+\definecolor{background}{HTML}{EEEEEE}
+\definecolor{delim}{RGB}{20,105,176}
+\colorlet{numb}{magenta!60!black}
+
+\lstdefinelanguage{json}{
+    basicstyle=\normalfont\ttfamily,
+    numbers=none,
+    numberstyle=\scriptsize,
+    stepnumber=1,
+    numbersep=8pt,
+    showstringspaces=false,
+    breaklines=true,
+    frame=lines,
+    backgroundcolor=\color{background},
+    literate=
+     *{0}{{{\color{numb}0}}}{1}
+      {1}{{{\color{numb}1}}}{1}
+      {2}{{{\color{numb}2}}}{1}
+      {3}{{{\color{numb}3}}}{1}
+      {4}{{{\color{numb}4}}}{1}
+      {5}{{{\color{numb}5}}}{1}
+      {6}{{{\color{numb}6}}}{1}
+      {7}{{{\color{numb}7}}}{1}
+      {8}{{{\color{numb}8}}}{1}
+      {9}{{{\color{numb}9}}}{1}
+      {:}{{{\color{punct}{:}}}}{1}
+      {,}{{{\color{punct}{,}}}}{1}
+      {\{}{{{\color{delim}{\{}}}}{1}
+      {\}}{{{\color{delim}{\}}}}}{1}
+      {[}{{{\color{delim}{[}}}}{1}
+      {]}{{{\color{delim}{]}}}}{1},
+    }
+
+\begin{figure}
+  \[\begin{array}{rcl}
+      \terms&\gets&A\mid\at{p}{t}\mid(t \linseqe t)\mid
+                    (t\braseqe\pi t)\mid(t\brapare\pi t) \\
+      A&\gets&\asptnn{\bar{a}}
+               \mid\cpy\mid\sig\mid\hsh %\mid\cdots      
+    \end{array}\]
+  \caption{Copland Phrase grammar where: \newline
+    $\bar{a}$ = ($m$, $\bar{s}$,
+    $p$, $r$); $m = \aspid\in\mathbb{N}$; $\bar{s}$ is
+    a list of string arguments; $p
+    = \plc\in\mathbb{N}$; $r = target\_id\in\mathbb{N}$;  and $\pi = (\pi_1,\pi_2)$ is a pair of
+    evidence splitting functions.
+}
+  \label{fig:term-grammar-json}
+\end{figure}
+
+
+\begin{figure}
+  %\begin{scriptsize}
+  \[\begin{array}{rcl}
+      \evt&\gets&\mtc\mid\Nt{\nidt}\mid\Ut{\bar{a}}{p}{\evt} \\
+          & & \mid\Gt{p}{\evt}\mid\Ht{p}{\evt} \\
+          & & \mid\SSt{\evt}{\evt}\mid\PPt{\evt}{\evt} %\mid\cdots
+    \end{array}\]
+  \caption{Evidence Type grammar where: \newline
+    $\bar{a}$ and $p$ are as in Fig.~\ref{fig:term-grammar-json} and
+    $n = \nid\in\mathbb{N}$.}
+  \label{fig:evidence_type-json}
+  %\end{scriptsize}
+\end{figure}
+
+
+\begin{figure}
+  %\begin{small}
+  \[\begin{array}{rcl}
+      \evt_{c}&\gets&\mtc_{c}\mid\Ntc{\nidt}{\bs}\mid\Utc{\bar{a}}{p}{\bs}{\evt_{c}}\\
+              & & \mid\Gtc{p}{\bs}{\evt_{c}}\mid\Htc{p}{\bs}{\evt} \\
+      & & \mid\SSt{\evt_{c}}{\evt_{c}}\mid\PPt{\evt_{c}}{\evt_{c}} %\mid\cdots
+      
+    \end{array}\]
+  \caption{Typed Concrete Evidence grammar where: \newline
+     $\bar{a}$, $p$, and $n$ are as in Fig.~\ref{fig:evidence_type-json}
+     and $\bs\in\bst$~(binary values).}
+  \label{fig:concrete-ev-json}
+  %\end{small}
+\end{figure}
+
+\newpage
+
+\section{JSON Schemas}
+We represent Copland terms ($\terms$ in
+Figure~\ref{fig:term-grammar-json}), Evidence Types ($\evt$ in
+Figure~\ref{fig:evidence_type-json}), and Typed Concrete Evidence
+($\evt_{c}$ in Figure~\ref{fig:concrete-ev-json}) as Algebraic Data
+Types (ADTs) in the Attestation Manager prototypes.  In JSON we
+represent each ADT as an object with two fields:
+
+\begin{enumerate}
+  \item $\cnc{constructor}$-the constructor name as a JSON
+    string ($\strj$).  Constructor names must be unique for unambiguous parsing.
+  \item $\cnc{data}$-An \textbf{\emph{ordered}} JSON array ($\arrj$) that holds
+the arguments for that particular constructor.  Members of the data
+array will differ from constructor to constructor.
+\end{enumerate}
+
+\noindent The general schema for ADTs (labelled by placeholder
+$\adtj$) is as follows: \\
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": (*\strj*),
+  "data": (*\arrj*) | (*\adtj*)
+}
+\end{lstlisting}
+
+\noindent The $\adtj$ alternative for the $\cnc{data}$ field accounts for
+degenerate nesting of constructors (for example in the ASP constructors below).
+
+% Constructor names and data arrays for each ADT are specified in
+% schemas below.    Note that $\strj$ and $\arrj$ are the JSON primitive
+% string and array types.
+
+\subsection{Copland Phrase JSON Schemas}
+The following JSON object schemas correspond to the constructors of
+the Copland phrase grammar ($\terms$) in
+Figure~\ref{fig:term-grammar-json}, and satisfy the $\tj$ placeholder.
+The $\numj$ and $\strj$ placeholders are for the standard json number
+and string datatypes.  The order of items in the ``data'' subarray is
+significant--they match the order of arguments to each constructor.
+Finally the placeholder $\spj$ stands for an evidence splitter, a JSON
+string with one of the constant values ``ALL'' or ``NONE''. \\
+
+% {"data":{"data":[1,["arg1","arg2"],2,3],"constructor":"ASPC"},"constructor":"Coq_asp"}
+
+\noindent $\aspcj$~:=~$[~\numj,~[\strj],~\numj,~\numj~]$ \\
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": "Coq_asp",
+  "data": {"constructor": "ASPC",
+           "data": (*\aspcj*)
+           }
+}
+\end{lstlisting}
+
+%\newpage
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": "Coq_asp",
+  "data": {"constructor": "CPY"}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": "Coq_asp",
+  "data": {"constructor": "SIG"}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": "Coq_asp",
+  "data": {"constructor": "HSH"}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": "Coq_att",
+  "data": [ (*\numj*),
+            (*\tj*) ]
+}
+\end{lstlisting}
+  
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": "Coq_lseq",
+  "data": [ (*\tj*),
+            (*\tj*) ]
+}
+\end{lstlisting}
+
+\vspace{2mm}
+
+\noindent $\spj$ := ``ALL''~$\mid$~``NONE'' \\
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": "Coq_bseq",
+  "data": [ [(*\spj*), (*\spj*)],
+             (*\tj*),
+             (*\tj*) ]
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": "Coq_bpar",
+  "data": [ [(*\spj*), (*\spj*)],
+             (*\tj*),
+             (*\tj*) ]
+}
+\end{lstlisting}
+
+\newpage
+
+\subsection{Copland Evidence Type Schemas}
+The following JSON object schemas correspond to the constructors of
+the Evidence Type grammar ($\evt$) in Figure~\ref{fig:evidence_type-json}, and satisfy the $\ej$ placeholder.
+
+%\newpage
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": "Coq_mt"
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": "Coq_nn",
+  "data": [ (*\numj*) ]
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": "Coq_uu",
+  "data": [ (*\aspcj*),
+            (*\numj*),
+            (*\ej*) ]
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": "Coq_gg",
+  "data": [ (*\numj*),
+            (*\ej*) ]
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": "Coq_hh",
+  "data": [ (*\numj*),
+            (*\ej*) ]
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": "Coq_ss",
+  "data": [ (*\ej*),
+            (*\ej*) ]
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": "Coq_pp",
+  "data": [ (*\ej*),
+            (*\ej*) ]
+}
+\end{lstlisting}
+
+
+\subsection{Copland Typed Concrete Evidence Schemas}
+The following JSON object schemas correspond to the constructors of
+the Typed Concrete Evidence grammar ($\evt_{c}$) in
+Figure~\ref{fig:concrete-ev-json}, and satisfy the $\ejc$ placeholder.
+Note: Constructor fields that hold binary data ($\cnc{bs}$ parameters
+in the grammar) become base64-encoded JSON strings ($\bsj$), holding arbirary
+binary data--hashes, nonces, signatures, etc: \\
+
+\noindent $\bsj$ := $\strj$ (Base64 encoded) \\
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": "Coq_mtc"
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": "Coq_nnc",
+  "data": [ (*\numj*), (*\bsj*) ]
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": "Coq_uuc",
+  "data": [ (*\aspcj*),
+            (*\numj*),
+            (*\bsj*),
+            (*\ejc*) ]
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": "Coq_ggc",
+  "data": [ (*\numj*),
+            (*\bsj*)
+            (*\ejc*) ]
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": "Coq_hhc",
+  "data": [ (*\numj*),
+            (*\bsj*)
+            (*\ej*) ]
+}
+\end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": "Coq_ssc",
+  "data": [ (*\ejc*),
+            (*\ejc*) ]
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "constructor": "Coq_ppc",
+  "data": [ (*\ejc*),
+            (*\ejc*) ]
+}
+\end{lstlisting}
+
+
+\newcommand{\mapadd}{\ensuremath{p => Address}}
+
+\subsection{Message Schemas}
+
+
+\begin{figure}
+
+\[\begin{array}{rcl}
+      RequestMessage = \{\\
+      toPlace &:: &\cnc{p},\\
+      fromPlace &:: &\cnc{p},\\
+      reqNameMap &:: &\cnc{\mapadd},\\
+      reqTerm &:: &\cnc{t},\\
+      reqEv &:: &[~\bs~]~\}
+  \end{array}\]
+
+\[\begin{array}{rcl}
+      ResponseMessage = \{\\
+      respToPlace &:: &\cnc{p},\\
+      respFromPlace &:: &\cnc{p},\\
+      respEv &:: &[~\bs~]~\}
+  \end{array}\]
+
+  \caption{Request and Response Message record structures.}\label{fig:messages-grammar}
+\end{figure}
+
+\colorlet{punct}{red!60!black}
+\definecolor{background}{HTML}{EEEEEE}
+\definecolor{delim}{RGB}{20,105,176}
+\colorlet{numb}{magenta!60!black}
+
+\lstdefinelanguage{json}{
+    basicstyle=\normalfont\ttfamily,
+    numbers=none,
+    numberstyle=\scriptsize,
+    stepnumber=1,
+    numbersep=8pt,
+    showstringspaces=false,
+    breaklines=true,
+    frame=lines,
+    backgroundcolor=\color{background},
+    literate=
+     *{0}{{{\color{numb}0}}}{1}
+      {1}{{{\color{numb}1}}}{1}
+      {2}{{{\color{numb}2}}}{1}
+      {3}{{{\color{numb}3}}}{1}
+      {4}{{{\color{numb}4}}}{1}
+      {5}{{{\color{numb}5}}}{1}
+      {6}{{{\color{numb}6}}}{1}
+      {7}{{{\color{numb}7}}}{1}
+      {8}{{{\color{numb}8}}}{1}
+      {9}{{{\color{numb}9}}}{1}
+      {:}{{{\color{punct}{:}}}}{1}
+      {,}{{{\color{punct}{,}}}}{1}
+      {\{}{{{\color{delim}{\{}}}}{1}
+      {\}}{{{\color{delim}{\}}}}}{1}
+      {[}{{{\color{delim}{[}}}}{1}
+      {]}{{{\color{delim}{]}}}}{1},
+    }
+
+%\section{Data Exchange Format (JSON Schema)}
+
+%\subsection{Message Schemas}
+We represent Request and Response Messages as record structures in Figure~\ref{fig:messages-grammar}.  Their respective JSON object schemas are as follows: \\
+
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "toPlace": (*\numj*),
+  "fromPlace": (*\numj*),
+  "reqNameMap": (*\namej*),
+  "reqTerm": (*\tj*),
+  "reqEv": (*\rawevj*)
+}
+\end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "respToPlace": (*\numj*),
+  "respFromPlace": (*\numj*),
+  "respEv": (*\rawevj*)
+}
+\end{lstlisting}
+
+% \noindent $\numj$ is the JSON primitive number type.  $\tj$ and
+% $\ej$ are JSON objects for Copland terms and evidence
+% respectively. \\
+
+\vspace{2mm}
+
+\noindent where \\ \\
+\noindent $\rawevj$ := $[~\bsj~]$ \\
+
+\noindent $\namej$ is a JSON object of the following form:
+
+\{$pl_1$:$addr_1$, $pl_2$:$addr_2$, ...\} \\
+
+\noindent where $pl_1$, $pl_2$, ... are JSON key strings that
+represent a Copland place identifier (i.e. ``1'', ``2'', ...) and
+$addr_1$, $addr_2$, ... are JSON strings ($\strj$) that represent
+platform addresses.  We leave address strings abstract in this
+specification, but an example usage would be a string of the form
+ip:port.
+
+We represent Sig Request and Response Messages as record structures in
+Figure~\ref{fig:sig-messages-grammar}.  Their respective JSON object
+schemas are as follows: \\ \\
+
+%\newpage
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "evBits": (*\bsj*)
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "sigBits": (*\bsj*)
+}
+\end{lstlisting}
+
+\begin{figure}
+
+\[\begin{array}{rcl}
+      SigRequestMessage = \{ evBits &:: &\bs \}
+  \end{array}\]
+
+\[\begin{array}{rcl}
+      SigResponseMessage = \{ sigBits &:: &\bs \}
+  \end{array}\]
+
+  \caption{Sig Request and Response Message record structures.}\label{fig:sig-messages-grammar}
+\end{figure}
+
+% \vspace{4mm}
+\newpage
+
+We represent Asp Request and Response Messages as record structures in
+Figure~\ref{fig:asp-messages-grammar}.  Their respective JSON object
+schemas are as follows: \\ \\
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "aspArgs": (*\aspcj*),
+  "aspInputEv": (*\rawevj*)
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=json, escapeinside={(*}{*)}]
+{
+  "aspBits": (*\bsj*)
+}
+\end{lstlisting}
+
+\begin{figure}
+
+\[\begin{array}{rcl}
+      AspRequestMessage = \{\\
+      aspArgs &:: &\cnc{\bar{a}},\\
+      aspInputEv &:: &[~\bs~]~\}
+  \end{array}\]
+
+\[\begin{array}{rcl}
+      AspResponseMessage = \{ aspBits &:: &\bs \}
+  \end{array}\]
+
+  \caption{Asp Request and Response Message record structures.}\label{fig:asp-messages-grammar}
+\end{figure}
+
+
+
+
+%%% Local Variables: ***
+%%% mode:latex ***
+%%% TeX-master: "copland_json.tex"  ***
+%%% End: ***
